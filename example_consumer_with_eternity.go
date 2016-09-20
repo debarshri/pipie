@@ -9,7 +9,7 @@ func main() {
 
 	q := pipie.MqClient{Hostname:"localhost", HostPort:8081}
 
-	q.Receive(func(data string){
+	q.ReceiveFromEternity(func(data string){
 		fmt.Println(data)
 	})
 }

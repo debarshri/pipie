@@ -2,21 +2,23 @@ package pipie
 
 import (
 	"bufio"
-	"net"
-	"time"
 	"log"
+	"net"
+	"net/http"
+	"strconv"
 )
 
 type OnMessageFunc func(string)
 
 type MqClient struct {
 	Hostname string
+	HostPort int
 }
 
 func (m MqClient) Receive(process OnMessageFunc) {
 
 	var count = 0
-	conn, err := net.Dial("tcp", m.Hostname)
+	conn, err := net.Dial("tcp", m.Hostname+":"+strconv.Itoa(m.HostPort))
 
 	if err != nil {
 		log.Println(err)
@@ -30,24 +32,26 @@ func (m MqClient) Receive(process OnMessageFunc) {
 			message, err := r.ReadString('\n')
 
 			if err != nil {
-				conn, _ = net.Dial("tcp", m.Hostname)
+				conn, err = net.Dial("tcp", m.Hostname+":"+strconv.Itoa(m.HostPort))
 			} else if message != "" {
 				process(message)
 			}
 		}
 
-		if count%10000000 == 0 {
-
+		if count%1000000000 == 0 {
 			log.Println("Recaliberate the connection")
-			conn, err = net.Dial("tcp", m.Hostname)
+			conn, err = net.Dial("tcp", m.Hostname+":"+strconv.Itoa(m.HostPort))
 
 			if err != nil {
 				log.Println(err)
-				time.Sleep(1000*time.Millisecond)
 			}
 		}
 	}
-
 }
 
+func (m MqClient) ReceiveFromEternity(process OnMessageFunc) {
 
+	go http.Get("http://"+m.Hostname+":"+strconv.Itoa(m.HostPort+1)+"/all")
+	m.Receive(process)
+
+}

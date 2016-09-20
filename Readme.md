@@ -17,7 +17,7 @@ import (
 func main(){
 	mq := pipie.StartWithPort("8081")
 	//mq := pipie.Start() Starts at 8080
-	mq.Publish("Some data)
+	mq.Send("Some data)
 }
 ```
 

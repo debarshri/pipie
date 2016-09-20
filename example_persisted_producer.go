@@ -9,8 +9,10 @@ func main(){
 	mq := pipie.ServerStreamAtPort(8081)
 
 	for{
-		mq.Send(time.Now().String())
-		time.Sleep(100*time.Millisecond)
+		mq.PersistedSend(time.Now().String())
+		time.Sleep(1*time.Second)
 	}
+
+	mq.Stop()
 
 }
