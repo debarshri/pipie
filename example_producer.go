@@ -2,7 +2,7 @@ package main
 
 import (
 	"time"
-	"github.com/debarshri/pipie/broker"
+	"github.com/debarshri/pipie/internals"
 )
 
 func main(){
