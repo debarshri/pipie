@@ -12,4 +12,5 @@ func main() {
 	q.ReceiveFromEternity(func(data string){
 		fmt.Println(data)
 	})
+
 }

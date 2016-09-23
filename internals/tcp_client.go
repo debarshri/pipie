@@ -6,16 +6,14 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"github.com/debarshri/pipie/internals/ds"
 )
 
 type OnMessageFunc func(string)
 
-type MqClient struct {
-	Hostname string
-	HostPort int
-}
 
-func (m MqClient) Receive(process OnMessageFunc) {
+
+func (m ds.MqClient) Receive(process OnMessageFunc) {
 
 	var count = 0
 	conn, err := net.Dial("tcp", m.Hostname+":"+strconv.Itoa(m.HostPort))
@@ -29,10 +27,14 @@ func (m MqClient) Receive(process OnMessageFunc) {
 		if conn != nil {
 			r := bufio.NewReader(conn)
 
+			w := bufio.NewWriter(conn)
+
 			message, err := r.ReadString('\n')
 
 			if err != nil {
 				conn, err = net.Dial("tcp", m.Hostname+":"+strconv.Itoa(m.HostPort))
+				w.WriteString("ack")
+
 			} else if message != "" {
 				process(message)
 			}
@@ -49,7 +51,7 @@ func (m MqClient) Receive(process OnMessageFunc) {
 	}
 }
 
-func (m MqClient) ReceiveFromEternity(process OnMessageFunc) {
+func (m ds.MqClient) ReceiveFromEternity(process OnMessageFunc) {
 
 	go http.Get("http://"+m.Hostname+":"+strconv.Itoa(m.HostPort+1)+"/all")
 	m.Receive(process)

@@ -10,9 +10,8 @@ func main(){
 
 	for{
 		mq.PersistedSend(time.Now().String())
-		time.Sleep(1*time.Second)
+		time.Sleep(1000*time.Millisecond)
 	}
 
 	mq.Stop()
-
 }
