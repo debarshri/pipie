@@ -22,9 +22,8 @@ func Start() MqServer {
 	ln, _ := net.Listen("tcp", ":8080")
 
 	// accept connection on port
-	conn , _ := ln.Accept()
 
-	return MqServer{conn: conn}
+	return MqServer{listener: ln}
 
 }
 
@@ -37,9 +36,8 @@ func ServerStreamAtPort(port int) MqServer {
 	if err != nil {
 		log.Fatal(err)
 	}
-	conn , _ := ln.Accept()
 
-	mq := MqServer{conn: conn, DB:db}
+	mq := MqServer{listener: ln, DB:db}
 
 	//go mq.startService(strconv.Itoa(port + 1))
 
@@ -55,8 +53,7 @@ func ServerStreamAtPortWithDBLoc(port int, dblocation string) MqServer {
 	if err != nil {
 		log.Fatal(err)
 	}
-	conn , _ := ln.Accept()
-	mq := MqServer{conn: conn, DB:db}
+	mq := MqServer{listener: ln, DB:db}
 
 	//go mq.startService(strconv.Itoa(port + 1))
 
@@ -109,15 +106,13 @@ func (mq MqServer) update() {
 
 func (m MqServer) send(key string, data string) {
 
-	c := make(chan bool)
-
-	con := m.conn
+	con , _:= m.listener.Accept()
 
 	message := Message{Key:key, Value:data}
 
 	serialzed_message, err := json.Marshal(message)
 
-	log.Print("Sending key", key)
+	log.Print("Sending key ", key)
 
 	_, err = con.Write([]byte(string(serialzed_message) + "\n"))
 
@@ -125,9 +120,7 @@ func (m MqServer) send(key string, data string) {
 		log.Println(err)
 	}
 
-	c <- true
-
-
+	con.Close()
 }
 
 func (m MqServer) Send(data string) {
@@ -138,10 +131,9 @@ func (m MqServer) Send(data string) {
 
 func (m MqServer) DeleteKey(data string) {
 
-	key := strconv.FormatInt(time.Now().UnixNano(), 10)
-	m.DB.Update(func(tx *bolt.Tx) error {
+	go m.DB.Update(func(tx *bolt.Tx) error {
 
-		c, _ := tx.CreateBucketIfNotExists([]byte("data"))
+		c := tx.Bucket([]byte("data"))
 
 		err := c.Delete([]byte(data))
 
@@ -149,32 +141,10 @@ func (m MqServer) DeleteKey(data string) {
 			log.Println(err)
 		}
 
-		log.Println("Deleting key", key)
+		log.Println("Deleting key", data)
 
 		return nil
 	})
-
-		m.DB.Update(func(tx *bolt.Tx) error {
-
-			c := tx.Bucket([]byte("data"))
-
-			if c != nil {
-
-				cursor := c.Cursor()
-
-				for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
-					log.Println("Working for the key ", string(k))
-
-					go func(key string, value string) {
-						m.send(key,value)
-					}(string(k),string(v))
-				}
-			}
-
-			return nil
-		})
-
-
 }
 
 func (m MqServer) PersistedSend(data string) {
@@ -190,12 +160,28 @@ func (m MqServer) PersistedSend(data string) {
 		return nil
 	})
 
+	go m.DB.Update(func(tx *bolt.Tx) error {
 
-	go func(key string, value string){
+		c := tx.Bucket([]byte("data"))
 
-		 m.send(key, value)
+		if c != nil {
 
-	 } (key,data)
+			cursor := c.Cursor()
+			var count int = 0
+
+			for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
+				log.Println("Working for the key ", string(k))
+
+				count = count+1
+					go m.send(string(k),string(v))
+			}
+
+			log.Println("Total messages ",count)
+		}
+
+		return nil
+	})
+
 
 }
 

@@ -104,15 +104,14 @@ func (m MqClient) ReceiveAndSendAck(mq MqServer, process OnMessageFunc) {
 
 				log.Println("Sending ack ", message.Key)
 
-				go func(key string) {
-					mq.Send(key)
-				}(message.Key)
+				mq.Send(message.Key)
 
 			}
 		}
 
 		if count%1000000000 == 0 {
 			log.Println("Recaliberate the connection")
+
 			conn, err = net.Dial("tcp", m.Hostname+":"+strconv.Itoa(m.HostPort))
 
 			if err != nil {
@@ -120,9 +119,4 @@ func (m MqClient) ReceiveAndSendAck(mq MqServer, process OnMessageFunc) {
 			}
 		}
 	}
-}
-
-func (m MqClient) ReceiveFromEternity(mq MqServer, process OnMessageFunc) {
-
-	m.ReceiveAndSendAck(mq, process)
 }
