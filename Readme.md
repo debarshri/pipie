@@ -6,45 +6,22 @@ Pure golang, embedded point to point messaging library
 
 It is as basic as it can get. Simple to use. Simple to extend.
 
-Conceptually, this messaging library has a producer and a consumer.
-Producer looks like this
+Producer starts two services, publish service and subscribe service
 
-```
-import (
-	"github.com/debarshri/pipie/broker"
-)
+When a producer publishes, the message is put into a bufferpool.
 
-func main(){
-	mq := pipie.StartWithPort("8081")
-	//mq := pipie.Start() Starts at 8080
-	mq.Send("Some data)
-}
-```
+Bufferpool is flush every time period t.
 
-Consumer looks like this
+On receiving an acknowledgment the message is removed from bufferpool. In pipie, bufferpool is persisted on disk.
 
-```
-import (
-	"fmt"
-	"github.com/debarshri/pipie/broker"
-)
+On consumer side, when a message is received, pipie consumer first persists it and sends our a acknowledgement on subscribe service.
+Application can then pick up message from this persisted bufferpool in time t. This is how, the backpressure is handled in pipie.
 
-func main() {
-
-	q := pipie.MqClient{Hostname:"localhost:8081"}
-
-	q.Receive(func(data string){
-		fmt.Println(data)
-	})
-}
-```
-
-As you can see you can pass the func where you receive data, process the data in that function.
+You can pass the func where you receive data, process the data in that function.
 
 You can have multiple consumers, in that scenario the messages are published in round robin fashion.
 
-It doesn't support message broadcasting. It doesn't support persistance of undelivered messages, acknowledgments. 
-Goddamit, theres so much work to be done.
+It doesn't support message broadcasting yet.
 
 This library was written for IoT kind of setting, just a side note, if you like side note. I like sidenotes.
 

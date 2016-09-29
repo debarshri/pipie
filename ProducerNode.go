@@ -13,8 +13,13 @@ func main() {
 
 	go producer.StartAckReceiveServer(node)
 
+	go producer.Flush(1*time.Second)
+
+	//This is a test
+
 	for {
-		producer.Send(time.Now().String())
+		producer.Send(time.Now().String()+
+			time.Now().String()+time.Now().String()+time.Now().String()+time.Now().String()+time.Now().String())
 		time.Sleep(100 * time.Millisecond)
 	}
 }

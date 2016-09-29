@@ -1,24 +1,29 @@
 package pipie
 
+func CreateConsumer(node Node) Consumer {
 
-func CreateConsumer(node Node)(Consumer){
-
+	var dbLocation string
 	if node.ProducerHostName != "" {
 
-		server := ServerStreamAtPortWithDBLoc(node.ConsumerPort, "pipie-consumer.db")
+		if node.DBLocation == "" {
+			dbLocation = "pipie-consumer.db"
+		} else {
+			dbLocation = node.DBLocation
+		}
+
+		server := ServerStreamAtPortWithDBLoc(node.ConsumerPort, dbLocation)
 		return Consumer{
-			Client:MqClient{Hostname:node.ProducerHostName,
-				HostPort:node.ProducerPort,
-				DB:server.DB,
+			Client: MqClient{Hostname: node.ProducerHostName,
+				HostPort: node.ProducerPort,
+				DB:       server.DB,
 			},
-			Server:server,
+			Server: server,
 		}
 	}
 
 	return Consumer{}
 }
 
-func (c Consumer) Receive(process OnMessageFunc){
+func (c Consumer) Receive(process OnMessageFunc) {
 	c.Client.ReceiveAndSendAck(c.Server, process)
 }
-

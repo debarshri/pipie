@@ -41,6 +41,7 @@ type Node struct {
 	ConsumerPort int
 	Persisted bool
 	Transient bool
+	DBLocation string
 }
 
 type Database struct {

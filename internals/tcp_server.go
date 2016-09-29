@@ -147,7 +147,7 @@ func (m MqServer) DeleteKey(data string) {
 	})
 }
 
-func (m MqServer) PersistedSend(data string) {
+func (m MqServer) Persist(payload string) {
 
 	key := strconv.FormatInt(time.Now().UnixNano(), 10)
 	m.DB.Update(func(tx *bolt.Tx) error {
@@ -155,10 +155,13 @@ func (m MqServer) PersistedSend(data string) {
 		c, _ := tx.CreateBucketIfNotExists([]byte("data"))
 
 		log.Println("Persisting data with key", key)
-		c.Put([]byte(key), []byte(data))
+		c.Put([]byte(key), []byte(payload))
 
 		return nil
 	})
+}
+
+func (m MqServer) Flush() {
 
 	go m.DB.Update(func(tx *bolt.Tx) error {
 
@@ -173,15 +176,15 @@ func (m MqServer) PersistedSend(data string) {
 				log.Println("Working for the key ", string(k))
 
 				count = count+1
-					go m.send(string(k),string(v))
+				go m.send(string(k),string(v))
 			}
 
-			log.Println("Total messages ",count)
+			log.Println("Total messages in the queue ",count)
 		}
 
 		return nil
 	})
-
-
 }
+
+
 
